@@ -1,0 +1,33 @@
+import org.apache.spark.graphx._
+import org.apache.spark.rdd.RDD
+import scala.util.Random
+
+// Creación de los vértices
+val numVertices = 20
+val vertexArray = (1L to numVertices).map(vertexId => (vertexId, s"V$vertexId"))
+val vertexRDD: RDD[(VertexId, String)] = spark.sparkContext.parallelize(vertexArray)
+
+// Creación de las aristas
+val numEdges = 50
+val edgeArray = (1 to numEdges).map { _ =>
+  val random = new Random()
+  val srcVertexId = random.nextInt(numVertices) + 1L
+  val dstVertexId = random.nextInt(numVertices) + 1L
+  val weight = random.nextInt(10) + 1
+  Edge(srcVertexId, dstVertexId, weight)
+}
+val edgeRDD: RDD[Edge[Int]] = spark.sparkContext.parallelize(edgeArray)
+
+// Creación del grafo
+val defaultVertexProperty = "Default"
+val graph: Graph[String, Int] = Graph(vertexRDD, edgeRDD, defaultVertexProperty)
+
+// Imprimir el grafo
+graph.triplets.collect().foreach(triplet => {
+  val srcVertexId = triplet.srcId
+  val srcVertexAttr = triplet.srcAttr
+  val dstVertexId = triplet.dstId
+  val dstVertexAttr = triplet.dstAttr
+  val weight = triplet.attr
+  println(s"($srcVertexId, $srcVertexAttr) --$weight--> ($dstVertexId, $dstVertexAttr)")
+})
